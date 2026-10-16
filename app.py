@@ -830,21 +830,44 @@ def process():
     )
 
 
+def find_available_port(start_port=5000, max_tries=10):
+    """查找可用端口，从 start_port 开始尝试"""
+    import socket
+    for port in range(start_port, start_port + max_tries):
+        try:
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                s.bind(('0.0.0.0', port))
+                return port
+        except OSError:
+            continue
+    return None
+
+
 if __name__ == '__main__':
     import webbrowser
     import threading
     import time
-    
+
+    # 自动查找可用端口
+    port = find_available_port(5000)
+    if port is None:
+        print("❌ 错误：无法找到可用端口（5000-5009 均被占用）")
+        input("按回车键退出...")
+        exit(1)
+
+    if port != 5000:
+        print(f"⚠️  端口 5000 已被占用，自动切换到端口 {port}")
+
     print("=" * 50)
     print("  发票信息提取工具已启动")
-    print("  请在浏览器中打开: http://localhost:5000")
+    print(f"  请在浏览器中打开: http://localhost:{port}")
     print("=" * 50)
-    
+
     # 延迟 2 秒后自动打开浏览器
     def open_browser():
         time.sleep(2)
-        webbrowser.open('http://localhost:5000')
-    
+        webbrowser.open(f'http://localhost:{port}')
+
     threading.Thread(target=open_browser, daemon=True).start()
-    
-    app.run(host='0.0.0.0', port=5000, debug=False)
+
+    app.run(host='0.0.0.0', port=port, debug=False)
